@@ -1,0 +1,460 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String   // ADMIN, FINANCE, TEACHER, STUDENT, PARENT
+  name      String
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  teacherProfile Teacher?
+  parentProfile  Parent?
+  studentProfile Student?
+  staffProfile   Staff?
+}
+
+model Staff {
+  id               String    @id @default(uuid())
+  userId           String?   @unique
+  user             User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  firstName        String
+  lastName         String
+  email            String?
+  phone            String?
+  employmentStatus String    @default("ACTIVE") // ACTIVE, INACTIVE, RESIGNED
+  dateOfBirth      String?
+  idNumber         String?   @unique
+  bankAccount      String?
+  bankName         String?
+  dateJoined       String
+  department       String?   // HR, FINANCE, ADMIN, TEACHING, etc.
+  position         String?
+  
+  employmentRecords Employment[]
+  payrolls          Payroll[]
+  payslips          Payslip[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SalaryScale {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "Head Teacher", "Senior Teacher", "Finance Officer"
+  baseSalary  Float
+  description String?
+  
+  employmentRecords Employment[]
+  createdAt DateTime @default(now())
+}
+
+model Employment {
+  id             String   @id @default(uuid())
+  staffId        String
+  staff          Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  salaryScaleId  String
+  salaryScale    SalaryScale @relation(fields: [salaryScaleId], references: [id], onDelete: Cascade)
+  effectiveDate  String   // YYYY-MM-DD
+  endDate        String?  // YYYY-MM-DD (if employment ended)
+  status         String   @default("ACTIVE") // ACTIVE, SUSPENDED, ENDED
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([staffId, effectiveDate])
+}
+
+model DeductionType {
+  id          String   @id @default(uuid())
+  name        String   @unique // NAPSA, NHIMA, PAYE, etc.
+  code        String   @unique
+  type        String   // FIXED (flat amount), PERCENTAGE (% of salary), or CALCULATION (custom formula)
+  rate        Float?   // For PERCENTAGE or FIXED type
+  description String?
+  
+  payrollDeductions PayrollDeduction[]
+  createdAt DateTime @default(now())
+}
+
+model Payroll {
+  id             String   @id @default(uuid())
+  staffId        String
+  staff          Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  paymentMonth   String   // YYYY-MM
+  baseSalary     Float
+  grossSalary    Float    // baseSalary + bonuses/allowances
+  totalDeductions Float   @default(0)
+  netSalary      Float
+  status         String   @default("DRAFT") // DRAFT, PROCESSED, PAID, CANCELLED
+  paymentDate    String?  // YYYY-MM-DD
+  
+  deductions     PayrollDeduction[]
+  payslips       Payslip[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([staffId, paymentMonth])
+}
+
+model PayrollDeduction {
+  id              String   @id @default(uuid())
+  payrollId       String
+  payroll         Payroll  @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+  deductionTypeId String
+  deductionType   DeductionType @relation(fields: [deductionTypeId], references: [id], onDelete: Cascade)
+  amount          Float
+  notes           String?
+  
+  createdAt DateTime @default(now())
+}
+
+model Payslip {
+  id             String   @id @default(uuid())
+  payrollId      String
+  payroll        Payroll  @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+  staffId        String
+  staff          Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  paymentMonth   String   // YYYY-MM
+  baseSalary     Float
+  grossSalary    Float
+  totalDeductions Float
+  netSalary      Float
+  generatedDate  DateTime @default(now())
+  paymentDate    String?  // YYYY-MM-DD
+  
+  createdAt DateTime @default(now())
+}
+
+model Teacher {
+  id             String  @id @default(uuid())
+  userId         String? @unique
+  user           User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  status         String  @default("ACTIVE")
+  specialization String?
+}
+
+model Parent {
+  id             String          @id @default(uuid())
+  userId         String?         @unique
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String
+  address        String?
+  students       StudentParent[]
+}
+
+model Student {
+  id                  String             @id @default(uuid())
+  userId              String?            @unique
+  user                User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  admissionNumber     String             @unique
+  firstName           String
+  lastName            String
+  gender              String             // M, F
+  dateOfBirth         String?            @default("2010-01-01")
+  schoolLevel         String?            @default("PRIMARY") // ECE, PRIMARY, SECONDARY
+  classId             String?
+  class               Class?             @relation(fields: [classId], references: [id], onDelete: SetNull)
+  streamId            String?
+  stream              Stream?            @relation(fields: [streamId], references: [id], onDelete: SetNull)
+  academicYear        String?            @default("2026") // e.g. 2026
+  status              String             @default("ACTIVE") // ACTIVE, TRANSFERRED, GRADUATED, SUSPENDED
+  enrollmentDate      String?
+  parentGuardianName  String?            @default("To be assigned")
+  parentGuardianPhone String?            @default("N/A")
+  alternativeContact  String?
+  residentialAddress  String?            @default("N/A")
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  parents             StudentParent[]
+  attendanceRecords   AttendanceRecord[]
+  results             Result[]
+  payments            Payment[]
+  invoices            Invoice[]
+  lunchEnrollment     StudentLunch?
+  transportEnrollment StudentTransport?
+  submissions         AssignmentSubmission[]
+
+  @@index([classId])
+  @@index([streamId])
+  @@index([status])
+  @@index([academicYear])
+  @@index([createdAt])
+}
+
+model StudentParent {
+  id        String  @id @default(uuid())
+  studentId String
+  parentId  String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent    Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, parentId])
+}
+
+model Class {
+  id           String          @id @default(uuid())
+  name         String          @unique // e.g., Grade 1, Form 1A, Grade 10
+  schoolLevel  String          // ECE, PRIMARY, SECONDARY
+  classTeacher String?         // Name of the teacher
+  capacity     Int             @default(40)
+  academicYear String
+  status       String          @default("ACTIVE") // ACTIVE, INACTIVE
+  
+  streams      Stream[]
+  students     Student[]
+  subjects     ClassSubject[]
+  exams        Exam[]
+  feeStructures FeeStructure[]
+}
+
+model Stream {
+  id           String         @id @default(uuid())
+  name         String         // e.g., Stream A, Stream B, North, South
+  classId      String
+  class        Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher      String?
+  
+  students     Student[]
+  attendances  Attendance[]
+  subjects     ClassSubject[]
+}
+
+model Subject {
+  id             String         @id @default(uuid())
+  name           String         @unique // e.g., Mathematics, English, Bemba
+  code           String         @unique // e.g., MATH101
+  classSubjects  ClassSubject[]
+  exams          Exam[]
+}
+
+model ClassSubject {
+  id        String  @id @default(uuid())
+  classId   String
+  streamId  String?
+  subjectId String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  stream    Stream? @relation(fields: [streamId], references: [id], onDelete: SetNull)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, subjectId, streamId])
+}
+
+model AcademicTerm {
+  id        String    @id @default(uuid())
+  name      String    // e.g., Term 1, Term 2, Term 3
+  startDate String
+  endDate   String
+  isActive  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  payments  Payment[]
+  invoices  Invoice[]
+}
+
+model Attendance {
+  id        String             @id @default(uuid())
+  streamId  String
+  stream    Stream             @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  date      String             // YYYY-MM-DD
+  markedBy  String
+  createdAt DateTime           @default(now())
+  records   AttendanceRecord[]
+
+  @@unique([streamId, date])
+}
+
+model AttendanceRecord {
+  id           String     @id @default(uuid())
+  attendanceId String
+  attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status       String     // P, A, L, E (Present, Absent, Late, Excused)
+
+  @@unique([attendanceId, studentId])
+}
+
+model Exam {
+  id        String   @id @default(uuid())
+  name      String   // e.g., End of Term 1 Exams
+  type      String   // TEST, MIDTERM, FINAL
+  termId    String
+  classId   String
+  subjectId String
+  date      String
+  
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  results   Result[]
+}
+
+model Result {
+  id        String  @id @default(uuid())
+  examId    String
+  exam      Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  marks     Float
+  grade     String  // A, B, C, D, F
+
+  @@unique([examId, studentId])
+}
+
+model FeeStructure {
+  id          String  @id @default(uuid())
+  classId     String
+  class       Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  streamId    String? // Optional specific stream
+  termId      String
+  amount      Float
+  description String
+}
+
+model Payment {
+  id             String       @id @default(uuid())
+  studentId      String
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount         Float
+  receiptNumber  String       @unique
+  date           String       // YYYY-MM-DD
+  paymentMethod  String       // Cash, Bank Transfer, Cheque, Mobile Money
+  feesPaid       Float
+  balance        Float
+  academicTermId String
+  academicTerm   AcademicTerm @relation(fields: [academicTermId], references: [id], onDelete: Cascade)
+  verified       Boolean      @default(true)
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique // e.g., INV-2026-001
+  studentId     String
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  termId        String
+  academicTerm  AcademicTerm  @relation(fields: [termId], references: [id], onDelete: Cascade)
+  
+  amountDue     Float         // Total amount billed
+  amountPaid    Float         @default(0) // Amount paid towards this invoice
+  status        String        @default("ISSUED") // ISSUED, PARTIAL, PAID, OVERDUE, CANCELLED
+  
+  issueDate     String        // Date invoice was created (YYYY-MM-DD)
+  dueDate       String        // When payment is due (YYYY-MM-DD)
+  
+  description   String        @default("Term Fees") // Tuition, Transport, Lunch, etc.
+  notes         String?
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@index([studentId])
+  @@index([termId])
+  @@index([status])
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  targetRoles String   // Serialized JSON array e.g., ["ADMIN", "PARENT"]
+  createdBy   String
+  createdAt   DateTime @default(now())
+}
+
+model TimetableEntry {
+  id        String @id @default(uuid())
+  classId   String
+  streamId  String
+  subjectId String
+  dayOfWeek String // Monday, Tuesday, etc.
+  startTime String // HH:MM
+  endTime   String // HH:MM
+}
+
+model Assignment {
+  id          String                 @id @default(uuid())
+  classId     String
+  streamId    String
+  subjectId   String
+  title       String
+  content     String
+  dueDate     String
+  submissions AssignmentSubmission[]
+}
+
+model AssignmentSubmission {
+  id             String     @id @default(uuid())
+  assignmentId   String
+  assignment     Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  submissionDate String
+  content        String
+  grade          String?
+  status         String     @default("SUBMITTED") // SUBMITTED, GRADED
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  details   String
+  timestamp DateTime @default(now())
+}
+
+model TransportRoute {
+  id         String             @id @default(uuid())
+  zoneName   String             @unique // e.g., North End, Avondale, Woodlands
+  monthlyFee Float
+  oneWayFee  Float
+  details    String?
+  enrollments StudentTransport[]
+}
+
+model StudentTransport {
+  id         String         @id @default(uuid())
+  studentId  String         @unique
+  student    Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  routeId    String
+  route      TransportRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  type       String         // ROUND_TRIP, ONE_WAY
+  active     Boolean        @default(true)
+  enrollDate String
+}
+
+model LunchPlan {
+  id          String         @id @default(uuid())
+  name        String         @unique // e.g., Weekly Plan, Full Term Plan
+  pricePerDay Float
+  details     String?
+  enrollments StudentLunch[]
+}
+
+model StudentLunch {
+  id          String    @id @default(uuid())
+  studentId   String    @unique
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lunchPlanId String
+  lunchPlan   LunchPlan @relation(fields: [lunchPlanId], references: [id], onDelete: Cascade)
+  active      Boolean   @default(true)
+  enrollDate  String
+}

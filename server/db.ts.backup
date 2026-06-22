@@ -1,0 +1,226 @@
+import { PrismaClient } from "@prisma/client";
+import bcryptjs from "bcryptjs";
+
+export const prisma = new PrismaClient();
+
+export async function seedDatabase() {
+  console.log("Checking database seed state...");
+
+  // 1. Seed Academic Term
+  let activeTerm = await prisma.academicTerm.findFirst({
+    where: { isActive: true },
+  });
+
+  if (!activeTerm) {
+    activeTerm = await prisma.academicTerm.create({
+      data: {
+        name: "Term 2 - 2026",
+        startDate: "2026-05-04",
+        endDate: "2026-08-07",
+        isActive: true,
+      },
+    });
+    console.log("Created default academic term:", activeTerm.name);
+  }
+
+  // 2. Seed Default Classes (Zambian School Structure)
+  const defaultClasses = [
+    { name: "Baby Class", schoolLevel: "ECE", capacity: 25 },
+    { name: "Middle Class", schoolLevel: "ECE", capacity: 25 },
+    { name: "Reception", schoolLevel: "ECE", capacity: 30 },
+    { name: "Grade 1", schoolLevel: "PRIMARY", capacity: 40 },
+    { name: "Grade 2", schoolLevel: "PRIMARY", capacity: 40 },
+    { name: "Grade 3", schoolLevel: "PRIMARY", capacity: 40 },
+    { name: "Grade 4", schoolLevel: "PRIMARY", capacity: 40 },
+    { name: "Grade 5", schoolLevel: "PRIMARY", capacity: 40 },
+    { name: "Grade 6", schoolLevel: "PRIMARY", capacity: 40 },
+    { name: "Grade 7", schoolLevel: "PRIMARY", capacity: 40 },
+    { name: "Form 1A", schoolLevel: "SECONDARY", capacity: 35 },
+    { name: "Form 1B", schoolLevel: "SECONDARY", capacity: 35 },
+    { name: "Form 2", schoolLevel: "SECONDARY", capacity: 35 },
+    { name: "Grade 10", schoolLevel: "SECONDARY", capacity: 45 },
+    { name: "Grade 11", schoolLevel: "SECONDARY", capacity: 45 },
+    { name: "Grade 12", schoolLevel: "SECONDARY", capacity: 45 },
+  ];
+
+  for (const c of defaultClasses) {
+    const existing = await prisma.class.findUnique({ where: { name: c.name } });
+    if (!existing) {
+      const createdClass = await prisma.class.create({
+        data: {
+          name: c.name,
+          schoolLevel: c.schoolLevel,
+          capacity: c.capacity,
+          academicYear: "2026",
+          status: "ACTIVE",
+          classTeacher: "TBD",
+        },
+      });
+
+      // Every class gets at least Stream A by default
+      await prisma.stream.create({
+        data: {
+          name: "Stream A",
+          classId: createdClass.id,
+          teacher: "TBD",
+        },
+      });
+      
+      // Secondary classes might get Stream B
+      if (c.name.startsWith("Grade 10") || c.name.startsWith("Form")) {
+        await prisma.stream.create({
+          data: {
+            name: "Stream B",
+            classId: createdClass.id,
+            teacher: "TBD",
+          },
+        });
+      }
+    }
+  }
+  console.log("Zambian school classes seeded successfully.");
+
+  // 3. Seed Default Subjects
+  const defaultSubjects = [
+    { name: "Mathematics", code: "MATH" },
+    { name: "English Language", code: "ENG" },
+    { name: "Integrated Science", code: "SCI" },
+    { name: "Social Studies", code: "SST" },
+    { name: "Chinyanja / Bemba", code: "LANG" },
+    { name: "Home Economics", code: "HE" },
+    { name: "Religious Education", code: "RE" },
+    { name: "Geography", code: "GEO" },
+    { name: "Civic Education", code: "CIV" },
+  ];
+
+  for (const sub of defaultSubjects) {
+    const existing = await prisma.subject.findUnique({
+      where: { name: sub.name },
+    });
+    if (!existing) {
+      await prisma.subject.create({
+        data: {
+          name: sub.name,
+          code: sub.code,
+        },
+      });
+    }
+  }
+  console.log("Default subjects seeded.");
+
+  // 4. Seed Users and Roles
+  const roles = [
+    { username: "admin", role: "ADMIN", name: "Royal Admin", pass: "admin123" },
+    { username: "finance", role: "FINANCE", name: "Mwansa Phiri (Bursar)", pass: "finance123" },
+    { username: "teacher", role: "TEACHER", name: "Mr. Chileshe Mulenga", pass: "teacher123" },
+    { username: "student", role: "STUDENT", name: "Luyando Tembo", pass: "student123" },
+    { username: "parent", role: "PARENT", name: "Mr. Kelvin Tembo", pass: "parent123" },
+  ];
+
+  for (const r of roles) {
+    const u = await prisma.user.findUnique({ where: { username: r.username } });
+    if (!u) {
+      const hashed = await bcryptjs.hash(r.pass, 10);
+      const createdUser = await prisma.user.create({
+        data: {
+          username: r.username,
+          password: hashed,
+          role: r.role,
+          name: r.name,
+          status: "ACTIVE",
+        },
+      });
+
+      if (r.role === "TEACHER") {
+        await prisma.teacher.create({
+          data: {
+            userId: createdUser.id,
+            firstName: "Chileshe",
+            lastName: "Mulenga",
+            email: "chileshe.m@royalschool.zm",
+            phone: "+260977123456",
+            specialization: "Mathematics & Science",
+          },
+        });
+      } else if (r.role === "PARENT") {
+        await prisma.parent.create({
+          data: {
+            userId: createdUser.id,
+            firstName: "Kelvin",
+            lastName: "Tembo",
+            email: "kelvin.tembo@gmail.com",
+            phone: "+260966987654",
+            address: "Plot 24, Longacres, Lusaka",
+          },
+        });
+      }
+    }
+  }
+
+  // 5. Seed some basic Transport Zones & Lunch Plans
+  const defaultZones = [
+    { zoneName: "Rhodes Park", monthlyFee: 450, oneWayFee: 250, details: "Central Lusaka route" },
+    { zoneName: "Woodlands", monthlyFee: 500, oneWayFee: 300, details: "South-East route" },
+    { zoneName: "Avondale & Chelstone", monthlyFee: 600, oneWayFee: 350, details: "East route" },
+  ];
+  for (const z of defaultZones) {
+    const ex = await prisma.transportRoute.findUnique({ where: { zoneName: z.zoneName } });
+    if (!ex) {
+      await prisma.transportRoute.create({ data: z });
+    }
+  }
+
+  const defaultLunch = [
+    { name: "Standard Daily Hot Meal", pricePerDay: 25, details: "Nshima, rice, chicken, beans, vegetables" },
+    { name: "Premium Catered Plan", pricePerDay: 35, details: "Hot lunch + daily snack + juice" },
+  ];
+  for (const l of defaultLunch) {
+    const ex = await prisma.lunchPlan.findUnique({ where: { name: l.name } });
+    if (!ex) {
+      await prisma.lunchPlan.create({ data: l });
+    }
+  }
+
+  // Hook student to a clean student record if not existing
+  const stdUser = await prisma.user.findUnique({ where: { username: "student" } });
+  if (stdUser) {
+    const exSt = await prisma.student.findUnique({ where: { userId: stdUser.id } });
+    if (!exSt) {
+      const parent = await prisma.parent.findFirst();
+      const firstClass = await prisma.class.findFirst();
+      const firstStream = await prisma.stream.findFirst({ where: { classId: firstClass?.id } });
+      if (firstClass && firstStream) {
+        const student = await prisma.student.create({
+          data: {
+            userId: stdUser.id,
+            admissionNumber: "ADM-2026-0001",
+            firstName: "Luyando",
+            lastName: "Tembo",
+            gender: "F",
+            dateOfBirth: "2015-08-12",
+            schoolLevel: firstClass.schoolLevel,
+            classId: firstClass.id,
+            streamId: firstStream.id,
+            academicYear: "2026",
+            enrollmentDate: "2026-01-10",
+            parentGuardianName: parent ? `${parent.firstName} ${parent.lastName}` : "Kelvin Tembo",
+            parentGuardianPhone: parent ? parent.phone : "+260966987654",
+            residentialAddress: "Plot 24, Longacres, Lusaka",
+            status: "ACTIVE",
+          },
+        });
+
+        if (parent) {
+          await prisma.studentParent.create({
+            data: {
+              studentId: student.id,
+              parentId: parent.id,
+            },
+          });
+        }
+      }
+    }
+  }
+
+  console.log("Database seed run checks finished successfully.");
+}

@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Georgia:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-serif: "Georgia", Cambria, serif;
+  --color-forest: #0a1f14;
+  --color-gold: #c9a84c;
+  --color-gold-hover: #b08f3b;
+}
+
+/* Custom school styling patterns */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f4f7f5;
+  color: #333333;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Skeleton Loading helper */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+.animate-skeleton {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: #e2e8f0;
+}

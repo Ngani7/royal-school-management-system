@@ -1,0 +1,6 @@
+{
+  "name": "Royal School Management System",
+  "description": "Full-stack School Management System (RSMS) for Royal School, Zambia, featuring student records, academic terms, attendance, exams, results, finance, and transport management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
