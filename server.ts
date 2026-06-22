@@ -16,7 +16,7 @@ import { invoiceRouter } from "./server/routes/invoices.js";
 async function startServer() {
   try {
     // 1. Initialise and seed local SQLite Database
-    await seedDatabase();
+    // await seedDatabase();
     const app = express();
     const server = createServer(app);
     
@@ -93,7 +93,7 @@ async function startServer() {
       });
     }
 
-    const PORT = 3000;
+    const PORT = process.env.PORT || 3000;
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`====================================================`);
       console.log(` ROYAL SCHOOL MANAGEMENT SYSTEM (RSMS) BOOTED SUCCESS `);
