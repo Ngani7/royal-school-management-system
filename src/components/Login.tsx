@@ -42,8 +42,8 @@ export default function Login({ onLoginSuccess }: Props) {
           <div className="h-16 w-16 rounded-full bg-gold/20 flex items-center justify-center mb-6 border-2 border-gold/30">
             <Award className="h-8 w-8 text-gold" />
           </div>
-          <h1 className="text-5xl font-serif font-bold leading-tight mb-4">Royal Academy</h1>
-          <h2 className="text-4xl font-serif font-bold text-gold mb-6">Zambian ERP</h2>
+          <h1 className="text-5xl font-serif font-bold leading-tight mb-4">Royal School</h1>
+          <h2 className="text-4xl font-serif font-bold text-gold mb-6">Management System</h2>
           <p className="text-lg text-white/80 leading-relaxed max-w-md">
             Comprehensive school management system for academic excellence, student administration, and financial operations.
           </p>
@@ -143,17 +143,6 @@ export default function Login({ onLoginSuccess }: Props) {
                 🔒 Secure access for authorized staff and administrators only
               </p>
             </div>
-
-            {/* TEST CREDENTIALS INFO (OPTIONAL) */}
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs font-medium text-blue-900 mb-2">📝 Default Test Credentials:</p>
-              <div className="space-y-1 text-xs text-blue-800 font-mono">
-                <p>👤 <span className="font-bold">admin</span> / <span className="font-bold">admin123</span></p>
-                <p>💰 <span className="font-bold">finance</span> / <span className="font-bold">finance123</span></p>
-              </div>
-              <p className="text-xs text-blue-700 mt-2">⚠️ Change these in production!</p>
-            </div>
-          </div>
 
           {/* MOBILE BRANDING */}
           <div className="lg:hidden mt-8 text-center text-white/70 text-xs">
