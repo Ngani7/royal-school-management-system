@@ -16,7 +16,7 @@ import { invoiceRouter } from "./server/routes/invoices.js";
 async function startServer() {
   try {
     // 1. Initialise and seed local SQLite Database
-    // await seedDatabase();
+    await seedDatabase();
     const app = express();
     const server = createServer(app);
     
