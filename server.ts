@@ -94,7 +94,7 @@ async function startServer() {
     }
 
     const PORT = 3000;
-    server.listen(PORT, "localhost", () => {
+    server.listen(PORT, "0.0.0.0", () => {
       console.log(`====================================================`);
       console.log(` ROYAL SCHOOL MANAGEMENT SYSTEM (RSMS) BOOTED SUCCESS `);
       console.log(` Server Address : http://localhost:${PORT}               `);
