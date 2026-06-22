@@ -144,9 +144,10 @@ export default function Login({ onLoginSuccess }: Props) {
               </p>
             </div>
 
-          {/* MOBILE BRANDING */}
-          <div className="lg:hidden mt-8 text-center text-white/70 text-xs">
-            <p>Royal Academy Zambian ERP System</p>
+            {/* MOBILE BRANDING */}
+            <div className="lg:hidden mt-8 text-center text-gray-600 text-xs">
+              <p>Royal School Management System</p>
+            </div>
           </div>
         </div>
       </div>
