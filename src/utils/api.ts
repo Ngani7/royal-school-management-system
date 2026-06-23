@@ -6,9 +6,19 @@ const getHeaders = () => {
   };
 };
 
+const getBaseURL = () => {
+  return import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+};
+
+const buildURL = (path: string) => {
+  const base = getBaseURL();
+  return `${base}${path}`;
+};
+
 export const api = {
   get: async (url: string) => {
-    const res = await fetch(url, { headers: getHeaders() });
+    const fullURL = buildURL(url);
+    const res = await fetch(fullURL, { headers: getHeaders() });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: "Request failed" }));
       throw new Error(err.error || "An error occurred");
@@ -16,7 +26,8 @@ export const api = {
     return res.json();
   },
   post: async (url: string, body: any) => {
-    const res = await fetch(url, {
+    const fullURL = buildURL(url);
+    const res = await fetch(fullURL, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(body),
@@ -28,7 +39,8 @@ export const api = {
     return res.json();
   },
   patch: async (url: string, body: any) => {
-    const res = await fetch(url, {
+    const fullURL = buildURL(url);
+    const res = await fetch(fullURL, {
       method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(body),
@@ -40,7 +52,8 @@ export const api = {
     return res.json();
   },
   delete: async (url: string) => {
-    const res = await fetch(url, {
+    const fullURL = buildURL(url);
+    const res = await fetch(fullURL, {
       method: "DELETE",
       headers: getHeaders(),
     });
