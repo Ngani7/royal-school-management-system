@@ -249,4 +249,59 @@ router.post(
   }) as RequestHandler
 );
 
+// ASSIGN STUDENT TO CLASS
+router.post(
+  "/:id/assign-class",
+  (async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { classId, streamId } = req.body;
+
+      if (!classId) {
+        return res.status(400).json({ error: "classId is required" });
+      }
+
+      // Verify class exists
+      const classExists = await prisma.class.findUnique({
+        where: { id: classId },
+      });
+
+      if (!classExists) {
+        return res.status(404).json({ error: "Class not found" });
+      }
+
+      // If streamId provided, verify it exists and belongs to this class
+      if (streamId) {
+        const streamExists = await prisma.stream.findUnique({
+          where: { id: streamId },
+        });
+
+        if (!streamExists || streamExists.classId !== classId) {
+          return res.status(400).json({ error: "Stream not found or doesn't belong to this class" });
+        }
+      }
+
+      // Update student
+      const student = await prisma.student.update({
+        where: { id },
+        data: {
+          classId,
+          streamId: streamId || null,
+        },
+        include: {
+          class: true,
+          stream: true,
+        },
+      });
+
+      res.json({
+        message: "Student assigned to class successfully",
+        student,
+      });
+    } catch (err: any) {
+      console.error("Assign class error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  }) as RequestHandler
+);
 export { router as studentsRouter };

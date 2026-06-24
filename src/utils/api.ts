@@ -7,7 +7,7 @@ const getHeaders = () => {
 };
 
 const getBaseURL = () => {
-  return import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  return "https://royal-school-management-system-production.up.railway.app";
 };
 
 const buildURL = (path: string) => {
