@@ -7,12 +7,12 @@ const getHeaders = () => {
 };
 
 const getBaseURL = () => {
-  return "https://royal-school-management-system-production.up.railway.app";
+  return import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 };
 
 const buildURL = (path: string) => {
-  const getBaseURL = () => {
-  return import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  const base = getBaseURL();
+  return `${base}${path}`;
 };
 
 export const api = {
